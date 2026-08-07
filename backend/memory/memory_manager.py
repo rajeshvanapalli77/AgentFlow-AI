@@ -17,9 +17,30 @@ class MemoryManager:
     5. Conversation History: Context window buffer.
     """
     def __init__(self):
-        self.pc = Pinecone(api_key=settings.PINECONE_API_KEY)
-        self.index = self.pc.Index(settings.PINECONE_INDEX_NAME)
-        self.embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=settings.GEMINI_API_KEY)
+        self._pc = None
+        self._index = None
+        self._embeddings = None
+
+    @property
+    def pc(self):
+        if not self._pc:
+            self._pc = Pinecone(api_key=settings.PINECONE_API_KEY or "dummy_key")
+        return self._pc
+
+    @property
+    def index(self):
+        if not self._index:
+            self._index = self.pc.Index(settings.PINECONE_INDEX_NAME or "dummy_index")
+        return self._index
+
+    @property
+    def embeddings(self):
+        if not self._embeddings:
+            self._embeddings = GoogleGenerativeAIEmbeddings(
+                model="models/embedding-001",
+                google_api_key=settings.GEMINI_API_KEY or "dummy_key"
+            )
+        return self._embeddings
 
     async def save_memory(
         self,

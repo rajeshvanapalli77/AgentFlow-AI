@@ -1,5 +1,6 @@
 import pytest
 import asyncio
+import os
 from backend.core.security import hash_password, verify_password, create_access_token, decode_token
 from backend.models_router.router import model_router
 from backend.services.tools import TOOL_REGISTRY
@@ -45,6 +46,10 @@ async def test_rag_chunking():
     chunks = rag_service._chunk_text(text, chunk_size=30, overlap=10)
     assert len(chunks) >= 1
 
+@pytest.mark.skipif(
+    not os.getenv("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY") == "",
+    reason="GEMINI_API_KEY not configured"
+)
 @pytest.mark.asyncio
 async def test_orchestrator_execution():
     res = await orchestrator.execute_workflow(
