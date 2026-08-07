@@ -24,7 +24,7 @@ jobs:
 
       - name: Run Pytest Suite
         run: |
-          pytest backend/tests/
+          python -m pytest backend/tests/
 
   build-docker:
     needs: test-backend
