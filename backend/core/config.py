@@ -42,5 +42,7 @@ class Settings(BaseSettings):
         extra = "ignore"
 
 settings = Settings()
+if settings.SECRET_KEY.startswith("replace_with_"):
+    raise RuntimeError("SECRET_KEY must be set to a unique, non-placeholder value.")
 
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
