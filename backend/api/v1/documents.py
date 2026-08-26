@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from pathlib import Path
 from typing import List
 from backend.database.session import get_db
 from backend.models.domain import Document, User
@@ -10,16 +11,26 @@ from backend.services.rag_service import rag_service
 
 router = APIRouter(prefix="/documents", tags=["Documents & RAG"])
 
+MAX_UPLOAD_BYTES = 25 * 1024 * 1024
+ALLOWED_EXTENSIONS = {".txt", ".md", ".pdf", ".docx"}
+
 @router.post("/upload", response_model=DocumentResponse)
 async def upload_document(
     file: UploadFile = File(...),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    contents = await file.read()
+    filename = Path(file.filename or "").name
+    if not filename or Path(filename).suffix.lower() not in ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=415, detail="Unsupported file type.")
+
+    contents = await file.read(MAX_UPLOAD_BYTES + 1)
+    if len(contents) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="File exceeds the 25 MB upload limit.")
+
     ingest_result = await rag_service.ingest_document(
         user_id=user.id,
-        filename=file.filename,
+        filename=filename,
         file_bytes=contents,
         file_type=file.content_type or "application/octet-stream"
     )
