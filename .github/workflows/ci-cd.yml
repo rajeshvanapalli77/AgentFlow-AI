@@ -23,6 +23,8 @@ jobs:
           pip install -r backend/requirements.txt
 
       - name: Run Pytest Suite
+        env:
+          SECRET_KEY: ci_test_secret_key_that_is_at_least_32_characters
         run: |
           python -m pytest backend/tests/
 
