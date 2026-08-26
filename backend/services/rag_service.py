@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import uuid
 import time
 from pinecone import Pinecone
@@ -62,13 +63,14 @@ class RAGService:
     async def ingest_document(self, user_id: str, filename: str, file_bytes: bytes, file_type: str) -> Dict[str, Any]:
         """Ingest document, extract text, chunk, and index in Pinecone & Postgres."""
         doc_id = str(uuid.uuid4())
-        file_path = os.path.join(settings.UPLOAD_DIR, f"{doc_id}_{filename}")
+        safe_filename = Path(filename).name
+        file_path = os.path.join(settings.UPLOAD_DIR, f"{doc_id}_{safe_filename}")
         with open(file_path, "wb") as f:
             f.write(file_bytes)
 
         # 1. Extract Text
         extracted_text = ""
-        ext = os.path.splitext(filename)[1].lower()
+        ext = os.path.splitext(safe_filename)[1].lower()
         try:
             if ext in ['.txt', '.md']:
                 extracted_text = file_bytes.decode('utf-8', errors='ignore')
@@ -102,7 +104,7 @@ class RAGService:
             doc_record = Document(
                 id=doc_id,
                 user_id=user_id,
-                filename=filename,
+                filename=safe_filename,
                 file_path=file_path,
                 file_type=file_type,
                 file_size=len(file_bytes),
@@ -118,13 +120,13 @@ class RAGService:
                     chunk_index=idx,
                     chunk_text=chunk,
                     vector_id=vec_id,
-                    metadata_json={"filename": filename, "chunk_index": idx}
+                    metadata_json={"filename": safe_filename, "chunk_index": idx}
                 )
                 session.add(embed_record)
 
                 ids.append(vec_id)
                 documents.append(chunk)
-                metadatas.append({"doc_id": doc_id, "user_id": user_id, "filename": filename, "chunk_index": idx})
+                metadatas.append({"doc_id": doc_id, "user_id": user_id, "filename": safe_filename, "chunk_index": idx})
 
             await session.commit()
 
