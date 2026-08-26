@@ -1,8 +1,7 @@
 import asyncio
 from sqlalchemy import select
 from backend.database.session import AsyncSessionLocal, init_tables
-from backend.models.domain import User, AgentRecord, Setting
-from backend.core.security import hash_password
+from backend.models.domain import AgentRecord
 
 DEFAULT_AGENTS = [
     {
@@ -67,21 +66,7 @@ async def seed_data():
     await init_tables()
     async with AsyncSessionLocal() as session:
         # Seed default admin user
-        result = await session.execute(select(User).where(User.email == "admin@agentflow.ai"))
-        admin = result.scalar_one_or_none()
-        if not admin:
-            admin = User(
-                email="admin@agentflow.ai",
-                hashed_password=hash_password("admin123!"),
-                full_name="System Administrator",
-                role="admin",
-                is_active=True
-            )
-            session.add(admin)
-            await session.commit()
-            print("--> Seeded default Admin user (admin@agentflow.ai / admin123!)")
-
-        # Seed default agents
+        result = await sessio        # Seed default agents
         for ag in DEFAULT_AGENTS:
             res = await session.execute(select(AgentRecord).where(AgentRecord.name == ag["name"]))
             existing = res.scalar_one_or_none()
