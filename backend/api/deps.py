@@ -23,7 +23,7 @@ async def get_current_user(
         raise credentials_exception
     user_repo = UserRepository(db)
     user = await user_repo.get_by_id(payload["sub"])
-    if not user:
+    if not user or not user.is_active:
         raise credentials_exception
     return user
 

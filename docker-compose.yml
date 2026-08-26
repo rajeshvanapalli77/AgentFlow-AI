@@ -22,7 +22,7 @@ services:
     image: chromadb/chroma:latest
     container_name: agentflow_chromadb
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8001:8000"
     volumes:
       - chroma_data:/chroma/chroma
 
@@ -34,6 +34,7 @@ services:
     environment:
       - DATABASE_URL=postgresql+asyncpg://agentflow_user:agentflow_password@postgres:5432/agentflow_db
       - CHROMA_PERSIST_DIRECTORY=/app/chroma_db
+      - SECRET_KEY=${SECRET_KEY:?Set SECRET_KEY in your environment}
     ports:
       - "8000:8000"
     depends_on:

@@ -11,6 +11,18 @@ from backend.evaluation.evaluator import evaluation_engine
 
 router = APIRouter(prefix="/chat", tags=["Chat & Multi-Agent Operations"])
 
+async def get_owned_session(session_id: str, user_id: str, db: AsyncSession) -> ChatSession:
+    result = await db.execute(
+        select(ChatSession).where(
+            ChatSession.id == session_id,
+            ChatSession.user_id == user_id,
+        )
+    )
+    session = result.scalar_one_or_none()
+    if not session:
+        raise HTTPException(status_code=404, detail="Chat session not found.")
+    return session
+
 @router.post("/sessions", response_model=SessionResponse)
 async def create_session(data: SessionCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     sess = ChatSession(user_id=user.id, title=data.title or "Agent Worksession")
@@ -26,6 +38,7 @@ async def list_sessions(user: User = Depends(get_current_user), db: AsyncSession
 
 @router.get("/sessions/{session_id}/messages", response_model=List[MessageResponse])
 async def list_messages(session_id: str, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    await get_owned_session(session_id, user.id, db)
     res = await db.execute(select(Message).where(Message.session_id == session_id).order_by(Message.created_at.asc()))
     return list(res.scalars().all())
 
@@ -38,6 +51,8 @@ async def execute_chat(data: ChatRequest, user: User = Depends(get_current_user)
         await db.commit()
         await db.refresh(sess)
         session_id = sess.id
+    else:
+        await get_owned_session(session_id, user.id, db)
 
     # 1. Save user message
     user_msg = Message(
