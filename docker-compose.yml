@@ -22,7 +22,7 @@ services:
     image: chromadb/chroma:latest
     container_name: agentflow_chromadb
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8001:8000"
     volumes:
       - chroma_data:/chroma/chroma
 
